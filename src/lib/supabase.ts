@@ -14,8 +14,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 export async function ensureAnonymousAuth(): Promise<User | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) return user;
+  // Prefer getSession() first — reads from storage immediately (fast on refresh)
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) return session.user;
   const { data: { user: anonUser }, error } = await supabase.auth.signInAnonymously();
   if (error) throw error;
   return anonUser ?? null;

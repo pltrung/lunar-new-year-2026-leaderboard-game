@@ -56,18 +56,38 @@ export function useUserVoteStatus(): {
       }
     );
 
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => {
-        if (cancelled) return;
-        if (session?.user) {
-          setUserId(session.user.id);
-          checkVote(session.user.id);
-        }
-      })
-      .catch(() => {});
+    let retryCount = 0;
+    const maxRetries = 12; // ~7s total so session restore has time after auth-ready gate
+    const retryRef = { current: 0 as ReturnType<typeof setTimeout> };
+
+    const trySession = () => {
+      if (cancelled) return;
+      supabase.auth.getSession()
+        .then(({ data: { session } }) => {
+          if (cancelled) return;
+          if (session?.user) {
+            setUserId(session.user.id);
+            checkVote(session.user.id);
+            return;
+          }
+          if (retryCount < maxRetries) {
+            retryCount += 1;
+            retryRef.current = window.setTimeout(trySession, 600);
+          }
+        })
+        .catch(() => {
+          if (retryCount < maxRetries) {
+            retryCount += 1;
+            retryRef.current = window.setTimeout(trySession, 600);
+          }
+        });
+    };
+
+    trySession();
 
     return () => {
       cancelled = true;
+      clearTimeout(retryRef.current);
       subscription.unsubscribe();
     };
   }, []);

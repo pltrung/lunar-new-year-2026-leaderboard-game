@@ -36,6 +36,7 @@ create trigger on_vote_insert
 -- RLS: dishes — anyone can read (including anon for leaderboard)
 alter table public.dishes enable row level security;
 
+drop policy if exists "Anyone can read dishes" on public.dishes;
 create policy "Anyone can read dishes"
   on public.dishes for select
   using (true);
@@ -45,19 +46,21 @@ create policy "Anyone can read dishes"
 -- RLS: votes — users can read their own vote and insert one (user_id = auth.uid())
 alter table public.votes enable row level security;
 
+drop policy if exists "Users can read own vote" on public.votes;
 create policy "Users can read own vote"
   on public.votes for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert own vote" on public.votes;
 create policy "Users can insert own vote"
   on public.votes for insert
   with check (auth.uid() = user_id and array_length(selected, 1) = 2);
 
 -- No update/delete policies = votes are immutable
 
--- Enable Realtime for leaderboard and vote count
-alter publication supabase_realtime add table public.dishes;
-alter publication supabase_realtime add table public.votes;
+-- Enable Realtime for leaderboard and vote count (ignore if already in publication)
+do $$ begin alter publication supabase_realtime add table public.dishes; exception when others then null; end $$;
+do $$ begin alter publication supabase_realtime add table public.votes; exception when others then null; end $$;
 
 grant usage on schema public to anon, authenticated;
 grant select on public.dishes to anon, authenticated;

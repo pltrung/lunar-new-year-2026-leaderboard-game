@@ -14,17 +14,62 @@ import { Leaderboard } from "@/components/Leaderboard";
 import { VotingSection } from "@/components/VotingSection";
 import { Confetti } from "@/components/Confetti";
 
+// Establish session before content mounts so refresh restores vote state
+const AUTH_READY_TIMEOUT_MS = 3000;
+
 export default function Home() {
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    let done = false;
+    const timeout = setTimeout(() => {
+      if (!done) {
+        done = true;
+        setAuthReady(true);
+      }
+    }, AUTH_READY_TIMEOUT_MS);
+
+    ensureAnonymousAuth()
+      .catch(() => {})
+      .finally(() => {
+        if (!done) {
+          done = true;
+          setAuthReady(true);
+        }
+      });
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, []);
+
+  if (!authReady) {
+    return (
+      <main className="min-h-screen pb-20 pt-6 px-4 sm:px-6 max-w-2xl mx-auto flex flex-col items-center justify-center">
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-6"
+        >
+          <h1 className="font-serif text-2xl sm:text-3xl text-lunar-gold-light font-semibold">
+            🧧 Lunar New Year Dish Championship 🐎
+          </h1>
+        </motion.header>
+        <p className="text-lunar-gold-light/70 text-sm">Loading…</p>
+      </main>
+    );
+  }
+
+  return <HomeContent />;
+}
+
+function HomeContent() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [guestName, setGuestName] = useState("");
   const { isExpired } = useCountdown();
   const { dishes, error: dishesError } = useDishes();
   const { items: leaderboardItems, loading: leaderboardLoading } = useLeaderboardWithVoters();
   const { voted, voteRecord, loading: voteLoading } = useUserVoteStatus();
-
-  useEffect(() => {
-    ensureAnonymousAuth().catch(() => {});
-  }, []);
 
   // One-time confetti when voting closes
   useEffect(() => {

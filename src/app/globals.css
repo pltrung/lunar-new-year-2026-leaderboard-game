@@ -69,3 +69,22 @@ body {
 .countdown-digit {
   font-variant-numeric: tabular-nums;
 }
+
+/* Horse progress bar — horse glow in final 10s */
+.horse-glow {
+  filter: drop-shadow(0 0 8px rgba(248, 226, 122, 0.6)) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+}
+
+/* Subtle motion blur behind horse in final 10s */
+.horse-motion-blur {
+  filter: drop-shadow(0 0 6px rgba(248, 226, 122, 0.4)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+/* Track glow intensifies in final 10s */
+.track-glow-intense {
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.5),
+    0 0 24px rgba(212, 175, 55, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}

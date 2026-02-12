@@ -6,29 +6,58 @@ interface HorseProgressBarProps {
   /** 0 = start, 1 = finish. Updates every second with countdown. */
   progress: number;
   isExpired: boolean;
-  /** True when remaining <= 10 seconds (subtle glow + speed-up easing). */
+  /** True when remaining <= 10 seconds. */
   isLastTenSeconds: boolean;
 }
 
-function countdownPartsToMs(parts: { days: number; hours: number; minutes: number; seconds: number }): number {
-  const { days, hours, minutes, seconds } = parts;
-  return (days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds) * 1000;
-}
-
-/** Horse icon — emoji so it’s clearly recognizable (Year of the Horse) */
-function HorseIcon({ className }: { className?: string }) {
+/** Running horse silhouette facing RIGHT (toward finish). Metallic gold gradient + shadow. */
+function HorseSilhouette({ className }: { className?: string }) {
   return (
-    <span className={`inline-block text-2xl sm:text-3xl leading-none ${className ?? ""}`} role="img" aria-hidden>
-      🐎
-    </span>
+    <svg
+      viewBox="0 0 80 44"
+      fill="none"
+      className={className}
+      aria-hidden
+    >
+      <defs>
+        <linearGradient
+          id="horse-gold"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
+          <stop offset="0%" stopColor="#f8e27a" />
+          <stop offset="50%" stopColor="#d4af37" />
+          <stop offset="100%" stopColor="#b8960c" />
+        </linearGradient>
+        <filter id="horse-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="1.5" floodColor="#000" floodOpacity="0.4" />
+        </filter>
+      </defs>
+      {/* Horse body + head (facing right): nose left, tail right */}
+      <g filter="url(#horse-shadow)">
+        {/* Single path: running horse facing right — head left, tail right */}
+        <path
+          fill="url(#horse-gold)"
+          d="M6 26 L8 22 L10 18 L14 14 L18 12 L22 12 L26 14 L30 16 L34 14 L40 16 L44 20 L46 22 L50 20 L54 22 L56 26 L54 30 L52 32 L50 30 L48 28 L46 30 L44 34 L42 36 L38 34 L36 32 L34 34 L30 36 L26 34 L24 32 L22 34 L18 36 L14 34 L12 30 L10 28 L8 30 L6 26 Z"
+        />
+      </g>
+    </svg>
   );
 }
 
-/** Finish flag at end of track */
+/** Finish flag — gold gradient */
 function FinishFlagIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 20 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className} aria-hidden>
-      <path d="M4 4v16M4 4l12 4-12 4V4z" />
+    <svg viewBox="0 0 20 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className} aria-hidden>
+      <defs>
+        <linearGradient id="progress-bar-flag-gold" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#d4af37" />
+          <stop offset="100%" stopColor="#f8e27a" />
+        </linearGradient>
+      </defs>
+      <path d="M4 4v16M4 4l12 4-12 4V4z" stroke="url(#progress-bar-flag-gold)" />
     </svg>
   );
 }
@@ -38,87 +67,134 @@ export function HorseProgressBar({ progress, isExpired, isLastTenSeconds }: Hors
   const horsePositionPercent = progressClamped * 100;
 
   return (
-    <section className="mb-6 w-full max-w-2xl mx-auto px-0 sm:px-0" aria-label="Countdown race track">
-      {/* Track container: bar + horse row */}
+    <section className="mb-6 w-full max-w-2xl mx-auto" aria-label="Countdown race track">
       <div className="relative w-full">
-        {/* Horse (above bar) — positioned by progress */}
-        <div className="absolute bottom-full left-0 w-full h-8 sm:h-10 mb-1 pointer-events-none">
+        {/* ----- Horse row: positioned by transform (GPU-friendly) ----- */}
+        <div className="absolute bottom-full left-0 w-full h-10 sm:h-12 mb-1 pointer-events-none overflow-visible">
           <motion.div
             className="absolute top-0 flex flex-col items-center"
-            style={{ left: `${horsePositionPercent}%`, x: "-50%" }}
+            style={{ left: `${horsePositionPercent}%` }}
             initial={false}
             animate={{
               left: `${horsePositionPercent}%`,
               x: "-50%",
               transition: isLastTenSeconds
-                ? { type: "tween", duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }
-                : { type: "spring", stiffness: 120, damping: 24 },
+                ? { type: "tween", duration: 0.7, ease: [0.2, 0, 0.2, 1] }
+                : { type: "spring", stiffness: 100, damping: 22 },
             }}
           >
-            {/* Dust trail (subtle) — behind horse */}
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 flex gap-0.5 -translate-x-6">
-              {[0, 1, 2].map((i) => (
+            {/* Golden dust particles behind horse */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-8 flex gap-1">
+              {[0, 1, 2, 3].map((i) => (
                 <motion.span
                   key={i}
-                  className="w-1.5 h-1.5 rounded-full bg-lunar-gold/30"
-                  initial={{ opacity: 0.4, scale: 0.8 }}
+                  className="absolute w-1.5 h-1.5 rounded-full bg-[#f8e27a] opacity-40"
+                  style={{ left: `${i * 6}px`, top: `${(i % 2) * 4 - 2}px` }}
                   animate={{
-                    opacity: [0.2, 0.4],
-                    scale: [0.8, 1],
-                    transition: { duration: 0.6, repeat: Infinity, delay: i * 0.15 },
+                    opacity: [0.15, 0.4, 0.15],
+                    scale: [0.6, 1, 0.6],
+                    transition: { duration: 0.8, repeat: Infinity, delay: i * 0.2 },
                   }}
                 />
               ))}
             </div>
-            {/* Horse icon — light cream/gold for contrast on red; subtle outline + glow in last 10s */}
+
+            {/* Horse + shadow + bob + finish burst */}
             <motion.div
-              className={`w-8 h-8 sm:w-10 sm:h-10 text-lunar-gold-light flex items-center justify-center drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)] ${isLastTenSeconds || isExpired ? "ring-2 ring-lunar-gold-light/70" : ""}`}
+              className={`relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center ${isLastTenSeconds || isExpired ? "horse-glow" : ""} ${isLastTenSeconds ? "horse-motion-blur" : ""}`}
               animate={
                 isExpired
                   ? {
-                      scale: [1, 1.08, 1],
-                      transition: { duration: 0.4, ease: "easeOut" },
+                      x: [0, 8, 0],
+                      transition: { duration: 0.35, ease: "easeOut" },
                     }
-                  : {}
+                  : {
+                      y: [0, -2, 0],
+                      transition: {
+                        duration: 0.5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      },
+                    }
               }
             >
-              <HorseIcon className="w-full h-full" />
+              <HorseSilhouette />
             </motion.div>
           </motion.div>
         </div>
 
-        {/* Horizontal track bar */}
-        <div
-          className="relative w-full h-3 sm:h-4 rounded-full overflow-hidden"
+        {/* ----- Track: dark red gradient, gold outline, inner glow, dashed lanes ----- */}
+        <motion.div
+          className={`relative w-full h-4 sm:h-5 rounded-lg overflow-hidden border border-[#d4af37]/50 ${isLastTenSeconds ? "track-glow-intense" : ""}`}
           style={{
-            background: "linear-gradient(90deg, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.35) 50%, rgba(212,175,55,0.2) 100%)",
-            boxShadow: "0 0 12px rgba(212,175,55,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
+            background: "linear-gradient(90deg, #5c0011 0%, #7a001a 50%, #4a000d 100%)",
+            boxShadow:
+              "0 0 0 1px rgba(212,175,55,0.35), 0 0 16px rgba(212,175,55,0.12), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.2)",
           }}
         >
-          {/* Gold progress fill */}
+          {/* Brushed texture overlay (very subtle) */}
+          <div
+            className="absolute inset-0 opacity-[0.04] pointer-events-none"
+            style={{
+              backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)`,
+            }}
+          />
+          {/* Dashed lane markings */}
+          <div className="absolute inset-0 flex items-center justify-center gap-2 px-2 pointer-events-none">
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="h-0.5 flex-1 max-w-[8%] border-t border-dashed border-[#d4af37]/25"
+              />
+            ))}
+          </div>
+          {/* Progress fill — gradient gold */}
           <motion.div
-            className="absolute inset-y-0 left-0 rounded-full bg-lunar-gold/70"
+            className="absolute inset-y-0 left-0 rounded-l-md rounded-r-sm overflow-hidden"
             initial={false}
             animate={{ width: `${progressClamped * 100}%` }}
             transition={
               isLastTenSeconds
-                ? { type: "tween", duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }
-                : { type: "spring", stiffness: 100, damping: 22 }
+                ? { type: "tween", duration: 0.7, ease: [0.2, 0, 0.2, 1] }
+                : { type: "spring", stiffness: 90, damping: 22 }
             }
-            style={{ boxShadow: "inset 0 0 8px rgba(212,175,55,0.3)" }}
+            style={{
+              background: "linear-gradient(90deg, #d4af37 0%, #f8e27a 50%, #d4af37 100%)",
+              boxShadow: "inset 0 0 12px rgba(248,226,122,0.25)",
+            }}
           />
-        </div>
+        </motion.div>
 
-        {/* Finish flag at right end */}
+        {/* Finish flag + golden flash when countdown hits 0 */}
         <div
-          className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/2 w-5 h-5 sm:w-6 sm:h-6 text-lunar-gold flex items-center justify-center"
-          style={{ filter: "drop-shadow(0 0 4px rgba(212,175,55,0.4))" }}
+          className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/2 w-6 h-6 sm:w-7 sm:h-7 text-[#f8e27a] flex items-center justify-center z-10"
+          style={{ filter: "drop-shadow(0 0 6px rgba(212,175,55,0.5))" }}
         >
           <FinishFlagIcon className="w-full h-full" />
         </div>
+        {isExpired && (
+          <motion.div
+            className="absolute top-0 right-0 w-16 h-full rounded-l-lg pointer-events-none"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: [0, 0.7, 0], scale: [0.8, 1.2, 1.2] }}
+            transition={{ duration: 0.5 }}
+            style={{
+              background: "linear-gradient(90deg, transparent, rgba(248,226,122,0.4))",
+              boxShadow: "inset -20px 0 30px rgba(248,226,122,0.3)",
+            }}
+          />
+        )}
       </div>
     </section>
   );
 }
 
-export { countdownPartsToMs };
+export function countdownPartsToMs(parts: {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}): number {
+  const { days, hours, minutes, seconds } = parts;
+  return (days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds) * 1000;
+}

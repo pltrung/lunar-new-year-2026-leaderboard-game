@@ -14,14 +14,17 @@ interface LeaderboardProps {
   items: LeaderboardRow[];
   isLocked: boolean;
   loading?: boolean;
+  /** When true (e.g. countdown-zero sequence), pause layout/rank animations */
+  pauseAnimations?: boolean;
 }
 
-export function Leaderboard({ items, isLocked, loading }: LeaderboardProps) {
+export function Leaderboard({ items, isLocked, loading, pauseAnimations = false }: LeaderboardProps) {
   const previousRanks = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
+    if (pauseAnimations) return;
     items.forEach((d, i) => previousRanks.current.set(d.id, i + 1));
-  }, [items]);
+  }, [items, pauseAnimations]);
 
   if (loading) {
     return (
@@ -41,7 +44,7 @@ export function Leaderboard({ items, isLocked, loading }: LeaderboardProps) {
 
   return (
     <motion.div
-      layout
+      layout={!pauseAnimations}
       className="rounded-2xl bg-lunar-red-deep/40 border border-lunar-gold/20 p-4 sm:p-6 lantern-glow"
     >
       <h2 className="font-serif text-xl sm:text-2xl text-lunar-gold mb-4 flex items-center gap-2">
@@ -62,7 +65,7 @@ export function Leaderboard({ items, isLocked, loading }: LeaderboardProps) {
             return (
               <motion.li
                 key={row.id}
-                layout
+                layout={!pauseAnimations}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{
                   opacity: 1,

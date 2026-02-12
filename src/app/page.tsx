@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ensureAnonymousAuth } from "@/lib/supabase";
 import { useCountdown } from "@/hooks/useCountdown";
@@ -12,7 +12,12 @@ import { ParticipationCount } from "@/components/ParticipationCount";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Leaderboard } from "@/components/Leaderboard";
 import { VotingSection } from "@/components/VotingSection";
-import { Confetti } from "@/components/Confetti";
+import { TitleSection } from "@/components/TitleSection";
+import { CountdownZeroOverlay } from "@/components/CountdownZeroOverlay";
+import { HorseGallop } from "@/components/HorseGallop";
+import { ResultsModal } from "@/components/ResultsModal";
+import { playCeremonialDrum } from "@/lib/ceremonialDrum";
+import { fireCeremonialConfetti } from "@/lib/confettiSequence";
 
 // Establish session before content mounts so refresh restores vote state
 const AUTH_READY_TIMEOUT_MS = 3000;
@@ -63,129 +68,173 @@ export default function Home() {
   return <HomeContent />;
 }
 
+const SEQUENCE_FREEZE_MS = 500;
+const SEQUENCE_HORSE_DURATION_MS = 1200;
+const SEQUENCE_CONFETTI_DURATION_MS = 2500;
+const SEQUENCE_TOTAL_BEFORE_MODAL_MS =
+  SEQUENCE_FREEZE_MS + SEQUENCE_HORSE_DURATION_MS + SEQUENCE_CONFETTI_DURATION_MS;
+
 function HomeContent() {
-  const [showConfetti, setShowConfetti] = useState(false);
   const [guestName, setGuestName] = useState("");
   const { isExpired } = useCountdown();
   const { dishes, error: dishesError } = useDishes();
   const { items: leaderboardItems, loading: leaderboardLoading } = useLeaderboardWithVoters();
   const { voted, voteRecord, loading: voteLoading } = useUserVoteStatus();
 
-  // One-time confetti when voting closes
+  const prevExpiredRef = useRef<boolean | undefined>(undefined);
+  const sequenceTriggeredRef = useRef(false);
+  const expiredOnLoadRef = useRef(false);
+
+  const [overlayVisible, setOverlayVisible] = useState(false);
+  const [horseRunning, setHorseRunning] = useState(false);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+
+  const isFrozen = overlayVisible || horseRunning;
+
+  // Detect "already expired on load" (skip cinematic, show locked + modal only)
   useEffect(() => {
-    if (!isExpired) return;
-    const key = "lunar-confetti-shown";
-    if (typeof window !== "undefined" && !sessionStorage.getItem(key)) {
-      sessionStorage.setItem(key, "1");
-      setShowConfetti(true);
+    if (prevExpiredRef.current === undefined) {
+      prevExpiredRef.current = isExpired;
+      if (isExpired) expiredOnLoadRef.current = true;
     }
+  }, [isExpired]);
+
+  // When already expired on load: show results modal once leaderboard is ready (no sequence)
+  useEffect(() => {
+    if (!expiredOnLoadRef.current || !isExpired || leaderboardLoading) return;
+    setShowResultsModal(true);
+  }, [isExpired, leaderboardLoading]);
+
+  // Countdown just hit zero: run cinematic sequence once
+  useEffect(() => {
+    const justHitZero = prevExpiredRef.current === false && isExpired;
+    if (prevExpiredRef.current !== undefined) prevExpiredRef.current = isExpired;
+
+    if (!justHitZero || sequenceTriggeredRef.current || expiredOnLoadRef.current) return;
+    sequenceTriggeredRef.current = true;
+
+    const t1 = setTimeout(() => {
+      setOverlayVisible(true);
+      playCeremonialDrum();
+      setHorseRunning(true);
+    }, SEQUENCE_FREEZE_MS);
+
+    const t2 = setTimeout(() => {
+      setHorseRunning(false);
+      fireCeremonialConfetti();
+    }, SEQUENCE_FREEZE_MS + SEQUENCE_HORSE_DURATION_MS);
+
+    const t3 = setTimeout(() => {
+      setShowResultsModal(true);
+    }, SEQUENCE_TOTAL_BEFORE_MODAL_MS);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
   }, [isExpired]);
 
   const votingLocked = isExpired;
   const showNameAtTop = !votingLocked;
+  const topThree = leaderboardItems.slice(0, 3);
+  const showModal = showResultsModal && (expiredOnLoadRef.current || sequenceTriggeredRef.current);
 
   return (
-    <main className="min-h-screen pb-20 pt-6 px-4 sm:px-6 max-w-2xl mx-auto">
-      {showConfetti && <Confetti />}
+    <main className="min-h-screen pb-20 pt-6 px-4 sm:px-6 max-w-2xl mx-auto relative">
+      {/* Countdown-zero cinematic layer */}
+      <CountdownZeroOverlay visible={overlayVisible} />
+      <HorseGallop
+        running={horseRunning}
+        onComplete={() => setHorseRunning(false)}
+      />
+      <ResultsModal open={showModal} topThree={topThree} />
 
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-8"
-      >
-        <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl text-lunar-gold-light font-semibold leading-tight">
-          🧧 Lunar New Year Dish Championship 🐎
-        </h1>
-        <p className="text-lunar-gold-light/80 text-sm mt-2">
-          Vote for your top 2 dishes
-        </p>
-      </motion.header>
+      {/* Freeze interactions during sequence */}
+      <div className={isFrozen ? "pointer-events-none select-none" : ""}>
+        <TitleSection />
 
-      {/* Name at top: input before vote, "Hi Name" after */}
-      {showNameAtTop && (
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mb-6 p-4 rounded-2xl bg-lunar-gold/10 border border-lunar-gold/30"
-        >
-          {voted && (voteRecord?.guestName?.trim() || guestName.trim()) ? (
-            <p className="text-center text-lunar-gold font-serif font-medium">
-              Hi, {(voteRecord?.guestName?.trim() || guestName.trim()) || "Guest"}
-            </p>
-          ) : (
-            <>
-              <label htmlFor="guest-name-top" className="block text-sm font-semibold text-lunar-gold mb-2 text-center">
-                Your name (enter first, then pick dishes below)
-              </label>
-              <input
-                id="guest-name-top"
-                type="text"
-                placeholder="Enter your name"
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                maxLength={80}
-                className="w-full px-4 py-3 rounded-xl bg-lunar-red/20 border-2 border-lunar-gold/20 text-lunar-gold-light placeholder:text-lunar-gold-light/50 focus:border-lunar-gold/50 focus:outline-none text-center"
-                autoComplete="name"
-              />
-            </>
-          )}
-        </motion.section>
-      )}
-
-      {/* Countdown */}
-      <section className="mb-6">
-        <CountdownTimer />
-      </section>
-
-      {/* Participation + Status */}
-      <section className="flex flex-col items-center gap-3 mb-8">
-        <ParticipationCount />
-        <StatusBadge voted={voted} voteRecord={voteRecord} loading={voteLoading} />
-      </section>
-
-      {/* Locked / Winners banner */}
-      <AnimatePresence>
-        {votingLocked && (
+        {/* Name at top: input before vote, "Hi Name" after */}
+        {showNameAtTop && (
           <motion.section
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0 }}
-            className="mb-6 rounded-2xl bg-lunar-gold/15 border-2 border-lunar-gold/40 p-4 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-6 p-4 rounded-2xl bg-lunar-gold/10 border border-lunar-gold/30"
           >
-            <p className="font-serif text-xl text-lunar-gold">
-              Voting Closed! Winners Announced!
-            </p>
-            <p className="text-lunar-gold-light/90 text-sm mt-1">
-              🏆 1st · 🥈 2nd · 🥉 3rd below
-            </p>
+            {voted && (voteRecord?.guestName?.trim() || guestName.trim()) ? (
+              <p className="text-center text-lunar-gold font-serif font-medium">
+                Hi, {(voteRecord?.guestName?.trim() || guestName.trim()) || "Guest"}
+              </p>
+            ) : (
+              <>
+                <label htmlFor="guest-name-top" className="block text-sm font-semibold text-lunar-gold mb-2 text-center">
+                  Your name (enter first, then pick dishes below)
+                </label>
+                <input
+                  id="guest-name-top"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  maxLength={80}
+                  className="w-full px-4 py-3 rounded-xl bg-lunar-red/20 border-2 border-lunar-gold/20 text-lunar-gold-light placeholder:text-lunar-gold-light/50 focus:border-lunar-gold/50 focus:outline-none text-center"
+                  autoComplete="name"
+                />
+              </>
+            )}
           </motion.section>
         )}
-      </AnimatePresence>
 
-      {/* Leaderboard (top 5 with who picked) */}
-      <section className="mb-8">
-        <Leaderboard
-          items={leaderboardItems}
-          isLocked={votingLocked}
-          loading={leaderboardLoading}
-        />
-      </section>
+        <section className="mb-6">
+          <CountdownTimer />
+        </section>
 
-      {/* Voting */}
-      <section>
-        <VotingSection
-          dishes={dishes}
-          dishesError={dishesError}
-          disabled={voted || votingLocked}
-          voted={voted}
-          votingLocked={votingLocked}
-          voteRecord={voteRecord}
-          guestNameFromTop={guestName}
-          setGuestNameFromTop={setGuestName}
-          onVoteSuccess={() => {}}
-        />
-      </section>
+        <section className="flex flex-col items-center gap-3 mb-8">
+          <ParticipationCount />
+          <StatusBadge voted={voted} voteRecord={voteRecord} loading={voteLoading} />
+        </section>
+
+        <AnimatePresence>
+          {votingLocked && (
+            <motion.section
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0 }}
+              className="mb-6 rounded-2xl bg-lunar-gold/15 border-2 border-lunar-gold/40 p-4 text-center"
+            >
+              <p className="font-serif text-xl text-lunar-gold">
+                Voting Closed! Winners Announced!
+              </p>
+              <p className="text-lunar-gold-light/90 text-sm mt-1">
+                🏆 1st · 🥈 2nd · 🥉 3rd below
+              </p>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        <section className="mb-8">
+          <Leaderboard
+            items={leaderboardItems}
+            isLocked={votingLocked}
+            loading={leaderboardLoading}
+            pauseAnimations={isFrozen}
+          />
+        </section>
+
+        <section>
+          <VotingSection
+            dishes={dishes}
+            dishesError={dishesError}
+            disabled={voted || votingLocked}
+            voted={voted}
+            votingLocked={votingLocked}
+            voteRecord={voteRecord}
+            guestNameFromTop={guestName}
+            setGuestNameFromTop={setGuestName}
+            onVoteSuccess={() => {}}
+          />
+        </section>
+      </div>
     </main>
   );
 }

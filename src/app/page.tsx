@@ -43,6 +43,13 @@ export default function Home() {
 
   const votingLocked = isExpired;
 
+  const [showStatusLoading, setShowStatusLoading] = useState(true);
+  useEffect(() => {
+    if (!voteLoading) setShowStatusLoading(false);
+    const t = setTimeout(() => setShowStatusLoading(false), 2000);
+    return () => clearTimeout(t);
+  }, [voteLoading]);
+
   return (
     <main className="min-h-screen pb-20 pt-6 px-4 sm:px-6 max-w-2xl mx-auto">
       {showConfetti && <Confetti />}
@@ -81,7 +88,7 @@ export default function Home() {
       <section className="flex flex-col items-center gap-3 mb-8">
         <ParticipationCount />
         {authReady ? (
-          <StatusBadge voted={voted} voteRecord={voteRecord} loading={voteLoading} />
+          <StatusBadge voted={voted} voteRecord={voteRecord} loading={voteLoading && showStatusLoading} />
         ) : (
           <span className="text-sm text-lunar-gold-light/60">Connecting…</span>
         )}

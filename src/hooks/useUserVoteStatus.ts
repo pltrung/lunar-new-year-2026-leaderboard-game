@@ -20,7 +20,7 @@ export function useUserVoteStatus(): {
     const forceDone = () => {
       if (!cancelled) setLoading(false);
     };
-    const timeout = setTimeout(forceDone, 5000);
+    const timeout = setTimeout(forceDone, 2000);
 
     const checkVote = async (uid: string) => {
       try {

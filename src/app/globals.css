@@ -85,6 +85,27 @@ body {
   box-shadow:
     0 0 0 1px rgba(212, 175, 55, 0.5),
     0 0 24px rgba(212, 175, 55, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    inset 0 2px 4px rgba(0, 0, 0, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Finish flag: subtle glow + shimmer every 3s */
+.finish-flag-glow {
+  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.45));
+}
+
+.finish-flag-shimmer {
+  animation: finish-flag-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes finish-flag-shimmer {
+  0%, 92%, 100% {
+    opacity: 1;
+  }
+  94%, 98% {
+    opacity: 0.88;
+  }
+  96% {
+    opacity: 1.1;
+  }
 }

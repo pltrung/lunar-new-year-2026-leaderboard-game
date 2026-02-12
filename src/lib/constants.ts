@@ -1,5 +1,5 @@
-// Countdown end: 10 mins from now (for testing). For real event use: new Date("2026-02-15T21:00:00-08:00")
-export const VOTING_END_DATE = new Date(Date.now() + 10 * 60 * 1000);
+// Sunday Feb 15, 2026 9:00 PM Pacific
+export const VOTING_END_DATE = new Date("2026-02-15T21:00:00-08:00");
 
 export const TOTAL_GUESTS = 14;
 

@@ -70,9 +70,9 @@ export function HorseProgressBar({ progress, isExpired, isLastTenSeconds }: Hors
                 />
               ))}
             </div>
-            {/* Horse icon */}
+            {/* Horse icon — light cream/gold for contrast on red; subtle outline + glow in last 10s */}
             <motion.div
-              className={`w-8 h-8 sm:w-10 sm:h-10 text-lunar-gold flex items-center justify-center ${isLastTenSeconds || isExpired ? "drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]" : ""}`}
+              className={`w-8 h-8 sm:w-10 sm:h-10 text-lunar-gold-light flex items-center justify-center drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)] ${isLastTenSeconds || isExpired ? "ring-2 ring-lunar-gold-light/70" : ""}`}
               animate={
                 isExpired
                   ? {

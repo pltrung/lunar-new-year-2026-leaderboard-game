@@ -15,12 +15,12 @@ function countdownPartsToMs(parts: { days: number; hours: number; minutes: numbe
   return (days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds) * 1000;
 }
 
-/** Horse silhouette — minimal side profile (Year of the Horse) */
+/** Horse icon — emoji so it’s clearly recognizable (Year of the Horse) */
 function HorseIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 40 28" fill="currentColor" className={className} aria-hidden>
-      <path d="M6 20 L8 12 L14 8 L22 10 L30 6 L36 10 L38 16 L36 22 L30 24 L22 22 L14 24 L8 22 L6 20 Z" />
-    </svg>
+    <span className={`inline-block text-2xl sm:text-3xl leading-none ${className ?? ""}`} role="img" aria-hidden>
+      🐎
+    </span>
   );
 }
 

@@ -21,7 +21,12 @@ export default function Home() {
   const { voted, voteRecord, loading: voteLoading } = useUserVoteStatus();
 
   useEffect(() => {
-    ensureAnonymousAuth().then(() => setAuthReady(true));
+    const timeout = setTimeout(() => setAuthReady(true), 8000);
+    ensureAnonymousAuth()
+      .then(() => setAuthReady(true))
+      .catch(() => setAuthReady(true))
+      .finally(() => clearTimeout(timeout));
+    return () => clearTimeout(timeout);
   }, []);
 
   // One-time confetti when voting closes

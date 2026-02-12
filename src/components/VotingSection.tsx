@@ -45,7 +45,7 @@ export function VotingSection({
     setSubmitting(true);
     setError(null);
     try {
-      await submitVote([...selected] as [string, string], name);
+      await submitVote(Array.from(selected) as [string, string], name);
       setJustSubmitted(true);
       onVoteSuccess();
     } catch (e) {

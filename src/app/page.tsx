@@ -21,7 +21,7 @@ export default function Home() {
   const { voted, voteRecord, loading: voteLoading } = useUserVoteStatus();
 
   useEffect(() => {
-    const timeout = setTimeout(() => setAuthReady(true), 8000);
+    const timeout = setTimeout(() => setAuthReady(true), 3000);
     ensureAnonymousAuth()
       .then(() => setAuthReady(true))
       .catch(() => setAuthReady(true))
@@ -67,8 +67,10 @@ export default function Home() {
       {/* Participation + Status */}
       <section className="flex flex-col items-center gap-3 mb-8">
         <ParticipationCount />
-        {authReady && (
+        {authReady ? (
           <StatusBadge voted={voted} voteRecord={voteRecord} loading={voteLoading} />
+        ) : (
+          <span className="text-sm text-lunar-gold-light/60">Connecting…</span>
         )}
       </section>
 
@@ -101,8 +103,8 @@ export default function Home() {
       </section>
 
       {/* Voting */}
-      {authReady && (
-        <section>
+      <section>
+        {authReady ? (
           <VotingSection
             dishes={dishes}
             disabled={voted || votingLocked}
@@ -111,14 +113,12 @@ export default function Home() {
             voteRecord={voteRecord}
             onVoteSuccess={() => {}}
           />
-        </section>
-      )}
-
-      {!authReady && (
-        <div className="text-center py-8 text-lunar-gold-light/60">
-          Loading…
-        </div>
-      )}
+        ) : (
+          <div className="rounded-2xl bg-lunar-red-deep/40 border border-lunar-gold/20 p-6 text-center">
+            <p className="text-lunar-gold-light/70">Connecting… You can vote in a moment.</p>
+          </div>
+        )}
+      </section>
     </main>
   );
 }

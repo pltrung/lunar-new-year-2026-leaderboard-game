@@ -15,20 +15,15 @@ import { VotingSection } from "@/components/VotingSection";
 import { Confetti } from "@/components/Confetti";
 
 export default function Home() {
-  const [authReady, setAuthReady] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [guestName, setGuestName] = useState("");
   const { isExpired } = useCountdown();
-  const { dishes, loading: dishesLoading } = useDishes();
+  const { dishes } = useDishes();
   const { items: leaderboardItems, loading: leaderboardLoading } = useLeaderboardWithVoters();
   const { voted, voteRecord, loading: voteLoading } = useUserVoteStatus();
 
   useEffect(() => {
-    const timeout = setTimeout(() => setAuthReady(true), 3000);
-    ensureAnonymousAuth()
-      .then(() => setAuthReady(true))
-      .catch(() => setAuthReady(true))
-      .finally(() => clearTimeout(timeout));
-    return () => clearTimeout(timeout);
+    ensureAnonymousAuth().catch(() => {});
   }, []);
 
   // One-time confetti when voting closes
@@ -42,28 +37,11 @@ export default function Home() {
   }, [isExpired]);
 
   const votingLocked = isExpired;
-
-  const [showStatusLoading, setShowStatusLoading] = useState(true);
-  useEffect(() => {
-    if (!voteLoading) setShowStatusLoading(false);
-    const t = setTimeout(() => setShowStatusLoading(false), 2000);
-    return () => clearTimeout(t);
-  }, [voteLoading]);
+  const showNameAtTop = !votingLocked;
 
   return (
     <main className="min-h-screen pb-20 pt-6 px-4 sm:px-6 max-w-2xl mx-auto">
       {showConfetti && <Confetti />}
-
-      {/* Your name at top when we know it */}
-      {authReady && voteRecord?.guestName?.trim() && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center text-lunar-gold font-serif font-medium mb-2"
-        >
-          Hi, {voteRecord.guestName.trim()}
-        </motion.p>
-      )}
 
       {/* Header */}
       <motion.header
@@ -79,6 +57,37 @@ export default function Home() {
         </p>
       </motion.header>
 
+      {/* Name at top: input before vote, "Hi Name" after */}
+      {showNameAtTop && (
+        <motion.section
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mb-6 p-4 rounded-2xl bg-lunar-gold/10 border border-lunar-gold/30"
+        >
+          {voted && (voteRecord?.guestName?.trim() || guestName.trim()) ? (
+            <p className="text-center text-lunar-gold font-serif font-medium">
+              Hi, {(voteRecord?.guestName?.trim() || guestName.trim()) || "Guest"}
+            </p>
+          ) : (
+            <>
+              <label htmlFor="guest-name-top" className="block text-sm font-semibold text-lunar-gold mb-2 text-center">
+                Your name (enter first, then pick dishes below)
+              </label>
+              <input
+                id="guest-name-top"
+                type="text"
+                placeholder="Enter your name"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                maxLength={80}
+                className="w-full px-4 py-3 rounded-xl bg-lunar-red/20 border-2 border-lunar-gold/20 text-lunar-gold-light placeholder:text-lunar-gold-light/50 focus:border-lunar-gold/50 focus:outline-none text-center"
+                autoComplete="name"
+              />
+            </>
+          )}
+        </motion.section>
+      )}
+
       {/* Countdown */}
       <section className="mb-6">
         <CountdownTimer />
@@ -87,11 +96,7 @@ export default function Home() {
       {/* Participation + Status */}
       <section className="flex flex-col items-center gap-3 mb-8">
         <ParticipationCount />
-        {authReady ? (
-          <StatusBadge voted={voted} voteRecord={voteRecord} loading={voteLoading && showStatusLoading} />
-        ) : (
-          <span className="text-sm text-lunar-gold-light/60">Connecting…</span>
-        )}
+        <StatusBadge voted={voted} voteRecord={voteRecord} loading={voteLoading} />
       </section>
 
       {/* Locked / Winners banner */}
@@ -124,20 +129,16 @@ export default function Home() {
 
       {/* Voting */}
       <section>
-        {authReady ? (
-          <VotingSection
-            dishes={dishes}
-            disabled={voted || votingLocked}
-            voted={voted}
-            votingLocked={votingLocked}
-            voteRecord={voteRecord}
-            onVoteSuccess={() => {}}
-          />
-        ) : (
-          <div className="rounded-2xl bg-lunar-red-deep/40 border border-lunar-gold/20 p-6 text-center">
-            <p className="text-lunar-gold-light/70">Connecting… You can vote in a moment.</p>
-          </div>
-        )}
+        <VotingSection
+          dishes={dishes}
+          disabled={voted || votingLocked}
+          voted={voted}
+          votingLocked={votingLocked}
+          voteRecord={voteRecord}
+          guestNameFromTop={guestName}
+          setGuestNameFromTop={setGuestName}
+          onVoteSuccess={() => {}}
+        />
       </section>
     </main>
   );

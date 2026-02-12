@@ -11,6 +11,8 @@ interface VotingSectionProps {
   voted: boolean;
   votingLocked: boolean;
   voteRecord: { guestName?: string | null } | null;
+  guestNameFromTop: string;
+  setGuestNameFromTop: (v: string) => void;
   onVoteSuccess: () => void;
 }
 
@@ -20,9 +22,10 @@ export function VotingSection({
   voted,
   votingLocked,
   voteRecord,
+  guestNameFromTop,
+  setGuestNameFromTop,
   onVoteSuccess,
 }: VotingSectionProps) {
-  const [guestName, setGuestName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [justSubmitted, setJustSubmitted] = useState(false);
@@ -40,7 +43,7 @@ export function VotingSection({
   };
 
   const handleSubmit = async () => {
-    const name = guestName?.trim();
+    const name = guestNameFromTop?.trim();
     if (!name || selected.size !== 2 || submitting || disabled) return;
     setSubmitting(true);
     setError(null);
@@ -58,7 +61,7 @@ export function VotingSection({
   };
 
   const canSubmit =
-    guestName?.trim().length > 0 &&
+    guestNameFromTop?.trim().length > 0 &&
     selected.size === 2 &&
     !submitting &&
     !disabled;
@@ -75,7 +78,7 @@ export function VotingSection({
         )}
         {justSubmitted || (voted && !votingLocked) ? (
           <p className="font-serif text-lunar-gold-light">
-            You voted as {(justSubmitted ? guestName?.trim() : voteRecord?.guestName) || "Guest"} 🎉
+            You voted as {(justSubmitted ? guestNameFromTop?.trim() : voteRecord?.guestName) || "Guest"} 🎉
           </p>
         ) : (
           <p className="font-serif text-lunar-gold-light">
@@ -94,29 +97,8 @@ export function VotingSection({
       <h2 className="font-serif text-xl sm:text-2xl text-lunar-gold mb-2">
         Pick your top 2 dishes
       </h2>
-
-      <div className="mb-4 p-3 rounded-xl bg-lunar-gold/10 border border-lunar-gold/30">
-        <label htmlFor="guest-name" className="block text-sm font-semibold text-lunar-gold mb-1.5">
-          Your name (required to vote)
-        </label>
-        <input
-          id="guest-name"
-          type="text"
-          placeholder="Enter your name to vote"
-          value={guestName}
-          onChange={(e) => {
-            setGuestName(e.target.value);
-            setError(null);
-          }}
-          maxLength={80}
-          className="w-full px-4 py-3 rounded-xl bg-lunar-red/20 border-2 border-lunar-gold/20 text-lunar-gold-light placeholder:text-lunar-gold-light/50 focus:border-lunar-gold/50 focus:outline-none"
-          disabled={submitting}
-          autoComplete="name"
-        />
-      </div>
-
       <p className="text-sm text-lunar-gold-light/80 mb-4">
-        Select exactly 2 dishes, then submit your vote.
+        Select exactly 2 dishes (your name is at the top), then submit your vote.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-6">
         <AnimatePresence mode="popLayout">

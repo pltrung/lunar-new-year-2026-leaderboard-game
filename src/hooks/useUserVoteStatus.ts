@@ -58,7 +58,7 @@ export function useUserVoteStatus(): {
 
     let retryCount = 0;
     const maxRetries = 12; // ~7s total so session restore has time after auth-ready gate
-    const retryRef = { current: 0 as ReturnType<typeof setTimeout> };
+    const retryRef: { current: ReturnType<typeof setTimeout> | null } = { current: null };
 
     const trySession = () => {
       if (cancelled) return;

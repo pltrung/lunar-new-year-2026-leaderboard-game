@@ -18,7 +18,7 @@ export default function Home() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [guestName, setGuestName] = useState("");
   const { isExpired } = useCountdown();
-  const { dishes } = useDishes();
+  const { dishes, error: dishesError } = useDishes();
   const { items: leaderboardItems, loading: leaderboardLoading } = useLeaderboardWithVoters();
   const { voted, voteRecord, loading: voteLoading } = useUserVoteStatus();
 
@@ -131,6 +131,7 @@ export default function Home() {
       <section>
         <VotingSection
           dishes={dishes}
+          dishesError={dishesError}
           disabled={voted || votingLocked}
           voted={voted}
           votingLocked={votingLocked}

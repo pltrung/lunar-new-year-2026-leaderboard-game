@@ -4,18 +4,24 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Dish } from "@/types";
 
-export function useDishes(): { dishes: Dish[]; loading: boolean } {
+export function useDishes(): { dishes: Dish[]; loading: boolean; error: string | null } {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetch = async () => {
-      const { data, error } = await supabase
+      setError(null);
+      const { data, error: err } = await supabase
         .from("dishes")
         .select("id, name, votes")
         .order("votes", { ascending: false });
-      if (!error && data) {
-        setDishes(data as Dish[]);
+      if (err) {
+        setError(err.message);
+        if (typeof window !== "undefined") console.error("Dishes fetch error:", err);
+      }
+      if (!err && data) {
+        setDishes((data || []) as Dish[]);
       }
       setLoading(false);
     };
@@ -36,5 +42,5 @@ export function useDishes(): { dishes: Dish[]; loading: boolean } {
     };
   }, []);
 
-  return { dishes, loading };
+  return { dishes, loading, error };
 }

@@ -7,6 +7,7 @@ import type { Dish } from "@/types";
 
 interface VotingSectionProps {
   dishes: Dish[];
+  dishesError: string | null;
   disabled: boolean;
   voted: boolean;
   votingLocked: boolean;
@@ -18,6 +19,7 @@ interface VotingSectionProps {
 
 export function VotingSection({
   dishes,
+  dishesError,
   disabled,
   voted,
   votingLocked,
@@ -100,6 +102,21 @@ export function VotingSection({
       <p className="text-sm text-lunar-gold-light/80 mb-4">
         Select exactly 2 dishes (your name is at the top), then submit your vote.
       </p>
+      {dishes.length === 0 && (
+        <div className="py-4 px-3 rounded-xl bg-lunar-red/20 mb-4 space-y-1">
+          {dishesError ? (
+            <>
+              <p className="text-amber-200/90 text-sm font-medium">Could not load dishes</p>
+              <p className="text-lunar-gold-light/80 text-xs break-all">Error: {dishesError}</p>
+              <p className="text-lunar-gold-light/70 text-xs mt-2">Check: same Supabase project as Vercel env vars, and run the initial migration + seed in that project.</p>
+            </>
+          ) : (
+            <p className="text-lunar-gold-light/70 text-sm text-center">
+              No dishes in database. In Supabase SQL Editor run <code className="text-lunar-gold">seed-dishes.sql</code> (or DELETE FROM dishes then INSERT the 12 dishes).
+            </p>
+          )}
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-6">
         <AnimatePresence mode="popLayout">
           {dishes.map((dish) => {

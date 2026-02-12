@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Leaderboard } from "@/components/Leaderboard";
 import { VotingSection } from "@/components/VotingSection";
 import { TitleSection } from "@/components/TitleSection";
+import { HorseProgressBar } from "@/components/HorseProgressBar";
 import { CountdownZeroOverlay } from "@/components/CountdownZeroOverlay";
 import { HorseGallop } from "@/components/HorseGallop";
 import { ResultsModal } from "@/components/ResultsModal";
@@ -76,7 +77,17 @@ const SEQUENCE_TOTAL_BEFORE_MODAL_MS =
 
 function HomeContent() {
   const [guestName, setGuestName] = useState("");
-  const { isExpired } = useCountdown();
+  const { days, hours, minutes, seconds, isExpired } = useCountdown();
+  const initialRemainingMsRef = useRef<number | null>(null);
+
+  const currentRemainingMs = (days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds) * 1000;
+  if (!isExpired && initialRemainingMsRef.current === null) {
+    initialRemainingMsRef.current = currentRemainingMs;
+  }
+  const initialMs = initialRemainingMsRef.current ?? 1;
+  const progress = isExpired ? 1 : Math.min(1, Math.max(0, 1 - currentRemainingMs / initialMs));
+  const isLastTenSeconds = !isExpired && currentRemainingMs <= 10000;
+
   const { dishes, error: dishesError } = useDishes();
   const { items: leaderboardItems, loading: leaderboardLoading } = useLeaderboardWithVoters();
   const { voted, voteRecord, loading: voteLoading } = useUserVoteStatus();
@@ -153,6 +164,12 @@ function HomeContent() {
       {/* Freeze interactions during sequence */}
       <div className={isFrozen ? "pointer-events-none select-none" : ""}>
         <TitleSection />
+
+        <HorseProgressBar
+          progress={progress}
+          isExpired={isExpired}
+          isLastTenSeconds={isLastTenSeconds}
+        />
 
         {/* Name at top: input before vote, "Hi Name" after */}
         {showNameAtTop && (

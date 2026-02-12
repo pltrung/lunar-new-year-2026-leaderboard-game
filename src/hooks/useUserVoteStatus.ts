@@ -16,25 +16,38 @@ export function useUserVoteStatus(): {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    const forceDone = () => {
+      if (!cancelled) setLoading(false);
+    };
+    const timeout = setTimeout(forceDone, 5000);
+
     const checkVote = async (uid: string) => {
-      const { data } = await supabase
-        .from("votes")
-        .select("user_id, selected, created_at, guest_name")
-        .eq("user_id", uid)
-        .maybeSingle();
-      if (data) {
-        setVoteRecord({
-          userId: data.user_id,
-          selected: data.selected as [string, string],
-          createdAt: data.created_at,
-          guestName: data.guest_name ?? undefined,
-        });
-        setVoted(true);
-      } else {
-        setVoteRecord(null);
-        setVoted(false);
+      try {
+        const { data } = await supabase
+          .from("votes")
+          .select("user_id, selected, created_at, guest_name")
+          .eq("user_id", uid)
+          .maybeSingle();
+        if (cancelled) return;
+        if (data) {
+          setVoteRecord({
+            userId: data.user_id,
+            selected: data.selected as [string, string],
+            createdAt: data.created_at,
+            guestName: data.guest_name ?? undefined,
+          });
+          setVoted(true);
+        } else {
+          setVoteRecord(null);
+          setVoted(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          clearTimeout(timeout);
+        }
       }
-      setLoading(false);
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -57,10 +70,15 @@ export function useUserVoteStatus(): {
         checkVote(session.user.id);
       } else {
         setLoading(false);
+        clearTimeout(timeout);
       }
-    });
+    }).catch(forceDone);
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   return { voted, voteRecord, loading, userId };

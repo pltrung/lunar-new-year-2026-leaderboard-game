@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Dish } from "@/types";
+import type { LeaderboardRow } from "@/hooks/useLeaderboardWithVoters";
 
 const MEDAL = {
   1: { emoji: "🏆", label: "1st", class: "text-amber-300" },
@@ -11,17 +11,17 @@ const MEDAL = {
 };
 
 interface LeaderboardProps {
-  dishes: Dish[];
+  items: LeaderboardRow[];
   isLocked: boolean;
   loading?: boolean;
 }
 
-export function Leaderboard({ dishes, isLocked, loading }: LeaderboardProps) {
+export function Leaderboard({ items, isLocked, loading }: LeaderboardProps) {
   const previousRanks = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
-    dishes.forEach((d, i) => previousRanks.current.set(d.id, i + 1));
-  }, [dishes]);
+    items.forEach((d, i) => previousRanks.current.set(d.id, i + 1));
+  }, [items]);
 
   if (loading) {
     return (
@@ -50,17 +50,18 @@ export function Leaderboard({ dishes, isLocked, loading }: LeaderboardProps) {
           <span className="sparkle-dot text-lg inline-block">✨</span>
         )}
       </h2>
+      <p className="text-sm text-lunar-gold-light/70 mb-3">Top 5 dishes</p>
       <ul className="space-y-2">
         <AnimatePresence mode="popLayout">
-          {dishes.map((dish, index) => {
+          {items.map((row, index) => {
             const rank = index + 1;
             const medal = rank <= 3 ? MEDAL[rank as 1 | 2 | 3] : null;
-            const prevRank = previousRanks.current.get(dish.id);
+            const prevRank = previousRanks.current.get(row.id);
             const justMoved = prevRank !== undefined && prevRank !== rank;
 
             return (
               <motion.li
-                key={dish.id}
+                key={row.id}
                 layout
                 initial={{ opacity: 0, y: 10 }}
                 animate={{
@@ -70,47 +71,54 @@ export function Leaderboard({ dishes, isLocked, loading }: LeaderboardProps) {
                 }}
                 exit={{ opacity: 0 }}
                 className={`
-                  flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl
+                  flex flex-col gap-1 sm:gap-0 sm:flex-row sm:items-center p-3 sm:p-4 rounded-xl
                   bg-lunar-red/20 border border-lunar-gold/10
                   ${justMoved ? "rank-glow border-lunar-gold/40" : ""}
                   ${isLocked && rank <= 3 ? "ring-1 ring-lunar-gold/50" : ""}
                 `}
               >
-                <div className="flex-shrink-0 w-8 sm:w-10 text-center">
-                  {medal ? (
-                    <span
-                      className={`text-lg sm:text-xl font-serif font-semibold ${medal.class}`}
-                      title={medal.label}
-                    >
-                      {medal.emoji}
+                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                  <div className="flex-shrink-0 w-8 sm:w-10 text-center">
+                    {medal ? (
+                      <span
+                        className={`text-lg sm:text-xl font-serif font-semibold ${medal.class}`}
+                        title={medal.label}
+                      >
+                        {medal.emoji}
+                      </span>
+                    ) : (
+                      <span className="text-lunar-gold-light/70 font-serif font-medium">
+                        {rank}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-lunar-gold-light truncate block">
+                      {row.name}
                     </span>
-                  ) : (
-                    <span className="text-lunar-gold-light/70 font-serif font-medium">
-                      {rank}
+                  </div>
+                  <div className="flex-shrink-0">
+                    <span className="font-serif font-semibold text-lunar-gold tabular-nums">
+                      {row.votes}
                     </span>
-                  )}
+                    <span className="text-lunar-gold-light/70 text-sm ml-0.5">
+                      votes
+                    </span>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium text-lunar-gold-light truncate block">
-                    {dish.name}
-                  </span>
-                </div>
-                <div className="flex-shrink-0">
-                  <span className="font-serif font-semibold text-lunar-gold tabular-nums">
-                    {dish.votes}
-                  </span>
-                  <span className="text-lunar-gold-light/70 text-sm ml-0.5">
-                    votes
-                  </span>
-                </div>
+                {row.voters.length > 0 && (
+                  <div className="sm:ml-2 text-xs text-lunar-gold-light/80 pl-11 sm:pl-0">
+                    Picked by: {row.voters.join(", ")}
+                  </div>
+                )}
               </motion.li>
             );
           })}
         </AnimatePresence>
       </ul>
-      {dishes.length === 0 && (
+      {items.length === 0 && (
         <p className="text-lunar-gold-light/60 text-sm py-4 text-center">
-          No dishes yet. Add dishes in Firestore to get started.
+          No dishes yet. Add dishes in Supabase to get started.
         </p>
       )}
     </motion.div>

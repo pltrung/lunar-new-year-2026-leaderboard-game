@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ensureAnonymousAuth } from "@/lib/supabase";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useDishes } from "@/hooks/useDishes";
+import { useLeaderboardWithVoters } from "@/hooks/useLeaderboardWithVoters";
 import { useUserVoteStatus } from "@/hooks/useUserVoteStatus";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { ParticipationCount } from "@/components/ParticipationCount";
@@ -18,6 +19,7 @@ export default function Home() {
   const [showConfetti, setShowConfetti] = useState(false);
   const { isExpired } = useCountdown();
   const { dishes, loading: dishesLoading } = useDishes();
+  const { items: leaderboardItems, loading: leaderboardLoading } = useLeaderboardWithVoters();
   const { voted, voteRecord, loading: voteLoading } = useUserVoteStatus();
 
   useEffect(() => {
@@ -44,6 +46,17 @@ export default function Home() {
   return (
     <main className="min-h-screen pb-20 pt-6 px-4 sm:px-6 max-w-2xl mx-auto">
       {showConfetti && <Confetti />}
+
+      {/* Your name at top when we know it */}
+      {authReady && voteRecord?.guestName?.trim() && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center text-lunar-gold font-serif font-medium mb-2"
+        >
+          Hi, {voteRecord.guestName.trim()}
+        </motion.p>
+      )}
 
       {/* Header */}
       <motion.header
@@ -93,12 +106,12 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Leaderboard */}
+      {/* Leaderboard (top 5 with who picked) */}
       <section className="mb-8">
         <Leaderboard
-          dishes={dishes}
+          items={leaderboardItems}
           isLocked={votingLocked}
-          loading={dishesLoading}
+          loading={leaderboardLoading}
         />
       </section>
 

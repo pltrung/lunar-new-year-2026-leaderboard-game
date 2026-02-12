@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 interface StatusBadgeProps {
@@ -9,22 +8,7 @@ interface StatusBadgeProps {
   loading: boolean;
 }
 
-export function StatusBadge({ voted, voteRecord, loading }: StatusBadgeProps) {
-  const [showLoading, setShowLoading] = useState(true);
-  useEffect(() => {
-    if (!loading) setShowLoading(false);
-    const t = setTimeout(() => setShowLoading(false), 1500);
-    return () => clearTimeout(t);
-  }, [loading]);
-
-  if (loading && showLoading) {
-    return (
-      <div className="h-10 flex items-center justify-center">
-        <span className="text-lunar-gold-light/60 text-sm">Loading…</span>
-      </div>
-    );
-  }
-
+export function StatusBadge({ voted, voteRecord }: StatusBadgeProps) {
   if (voted) {
     const name = voteRecord?.guestName?.trim() || "Guest";
     return (

@@ -12,15 +12,11 @@ export function useUserVoteStatus(): {
 } {
   const [voted, setVoted] = useState(false);
   const [voteRecord, setVoteRecord] = useState<VoteRecord | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    const forceDone = () => {
-      if (!cancelled) setLoading(false);
-    };
-    const timeout = setTimeout(forceDone, 2000);
 
     const checkVote = async (uid: string) => {
       try {
@@ -42,11 +38,8 @@ export function useUserVoteStatus(): {
           setVoteRecord(null);
           setVoted(false);
         }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-          clearTimeout(timeout);
-        }
+      } catch {
+        if (!cancelled) setVoted(false);
       }
     };
 
@@ -56,7 +49,6 @@ export function useUserVoteStatus(): {
           setUserId(null);
           setVoted(false);
           setVoteRecord(null);
-          setLoading(false);
           return;
         }
         setUserId(session.user.id);
@@ -64,19 +56,18 @@ export function useUserVoteStatus(): {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-        checkVote(session.user.id);
-      } else {
-        setLoading(false);
-        clearTimeout(timeout);
-      }
-    }).catch(forceDone);
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (cancelled) return;
+        if (session?.user) {
+          setUserId(session.user.id);
+          checkVote(session.user.id);
+        }
+      })
+      .catch(() => {});
 
     return () => {
       cancelled = true;
-      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);

@@ -10,6 +10,18 @@ const MEDAL = {
   3: { emoji: "🥉", label: "3rd", class: "text-amber-700" },
 };
 
+/** Max names shown per dish to avoid overcrowding the tile; rest become "& N others" */
+const MAX_VOTER_NAMES_SHOWN = 5;
+
+function formatVoters(voters: string[]): string {
+  if (voters.length <= MAX_VOTER_NAMES_SHOWN) {
+    return voters.join(", ");
+  }
+  const shown = voters.slice(0, MAX_VOTER_NAMES_SHOWN).join(", ");
+  const rest = voters.length - MAX_VOTER_NAMES_SHOWN;
+  return `${shown} & ${rest} other${rest === 1 ? "" : "s"}`;
+}
+
 interface LeaderboardProps {
   items: LeaderboardRow[];
   isLocked: boolean;
@@ -110,12 +122,12 @@ export function Leaderboard({ items, isLocked, loading, pauseAnimations = false 
                     </span>
                   </div>
                 </div>
-                {/* Row 2: Picked by (smaller, wraps when many voters) */}
+                {/* Row 2: Picked by (cap names to avoid overcrowding) */}
                 {row.voters.length > 0 && (
                   <div className="text-xs text-lunar-gold-light/75 pl-11 sm:pl-12 flex flex-wrap gap-x-1.5 gap-y-0.5">
                     <span className="flex-shrink-0">Picked by:</span>
                     <span className="min-w-0 break-words">
-                      {row.voters.join(", ")}
+                      {formatVoters(row.voters)}
                     </span>
                   </div>
                 )}

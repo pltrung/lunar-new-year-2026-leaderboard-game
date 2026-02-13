@@ -96,34 +96,14 @@ function HomeContent() {
   const { items: leaderboardItems, loading: leaderboardLoading } = useLeaderboardWithVoters();
   const { voted, voteRecord, loading: voteLoading } = useUserVoteStatus();
 
-  // Post-results: team reveal or lock (full-screen layer)
-  if (isRevealOrLocked) {
-    return (
-      <main className="min-h-screen">
-        <TeamReveal phase={phase} team={voteRecord?.team ?? null} voted={voted} />
-      </main>
-    );
-  }
-
-  // 15-minute "surprise" countdown after results (no mention of teams)
-  if (isRevealCountdown) {
-    return (
-      <main className="min-h-screen pb-20 pt-6 px-4 sm:px-6 max-w-2xl mx-auto">
-        <TitleSection />
-        <section className="mt-8">
-          <RevealCountdown />
-        </section>
-      </main>
-    );
-  }
-
+  // All hooks must run unconditionally (no early return before these)
   const prevExpiredRef = useRef<boolean | undefined>(undefined);
   const sequenceTriggeredRef = useRef(false);
   const expiredOnLoadRef = useRef(false);
-
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [horseRunning, setHorseRunning] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
+  const [sequenceComplete, setSequenceComplete] = useState(false);
 
   const isFrozen = overlayVisible || horseRunning;
 
@@ -139,6 +119,7 @@ function HomeContent() {
   useEffect(() => {
     if (!expiredOnLoadRef.current || !isExpired || leaderboardLoading) return;
     setShowResultsModal(true);
+    setSequenceComplete(true);
   }, [isExpired, leaderboardLoading]);
 
   // Countdown just hit zero: run cinematic sequence once
@@ -162,6 +143,7 @@ function HomeContent() {
 
     const t3 = setTimeout(() => {
       setShowResultsModal(true);
+      setSequenceComplete(true);
     }, SEQUENCE_TOTAL_BEFORE_MODAL_MS);
 
     return () => {
@@ -175,6 +157,27 @@ function HomeContent() {
   const showNameAtTop = !votingLocked;
   const topThree = leaderboardItems.slice(0, 3);
   const showModal = showResultsModal && (expiredOnLoadRef.current || sequenceTriggeredRef.current);
+
+  // Post-results: team reveal or lock (full-screen layer)
+  if (isRevealOrLocked) {
+    return (
+      <main className="min-h-screen">
+        <TeamReveal phase={phase} team={voteRecord?.team ?? null} voted={voted} />
+      </main>
+    );
+  }
+
+  // 15-minute "surprise" countdown — only after sequence/modal has run so confetti isn't skipped
+  if (isRevealCountdown && sequenceComplete) {
+    return (
+      <main className="min-h-screen pb-20 pt-6 px-4 sm:px-6 max-w-2xl mx-auto">
+        <TitleSection />
+        <section className="mt-8">
+          <RevealCountdown />
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen pb-20 pt-6 px-4 sm:px-6 max-w-2xl mx-auto relative">

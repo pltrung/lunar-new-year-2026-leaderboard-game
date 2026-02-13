@@ -74,13 +74,14 @@ export function Leaderboard({ items, isLocked, loading, pauseAnimations = false 
                 }}
                 exit={{ opacity: 0 }}
                 className={`
-                  flex flex-col gap-1 sm:gap-0 sm:flex-row sm:items-center p-3 sm:p-4 rounded-xl
+                  flex flex-col gap-1.5 p-3 sm:p-4 rounded-xl
                   bg-lunar-red/20 border border-lunar-gold/10
                   ${justMoved ? "rank-glow border-lunar-gold/40" : ""}
                   ${isLocked && rank <= 3 ? "ring-1 ring-lunar-gold/50" : ""}
                 `}
               >
-                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                {/* Row 1: rank, dish name, votes */}
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                   <div className="flex-shrink-0 w-8 sm:w-10 text-center">
                     {medal ? (
                       <span
@@ -109,9 +110,13 @@ export function Leaderboard({ items, isLocked, loading, pauseAnimations = false 
                     </span>
                   </div>
                 </div>
+                {/* Row 2: Picked by (smaller, wraps when many voters) */}
                 {row.voters.length > 0 && (
-                  <div className="sm:ml-2 text-xs text-lunar-gold-light/80 pl-11 sm:pl-0">
-                    Picked by: {row.voters.join(", ")}
+                  <div className="text-xs text-lunar-gold-light/75 pl-11 sm:pl-12 flex flex-wrap gap-x-1.5 gap-y-0.5">
+                    <span className="flex-shrink-0">Picked by:</span>
+                    <span className="min-w-0 break-words">
+                      {row.voters.join(", ")}
+                    </span>
                   </div>
                 )}
               </motion.li>

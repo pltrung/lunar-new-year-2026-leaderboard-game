@@ -9,6 +9,8 @@ export interface VoteRecord {
   selected: [string, string];
   createdAt: string;
   guestName?: string | null;
+  /** Set when vote was cast; only shown after reveal phase. */
+  team?: "white" | "black" | null;
 }
 
 export type RankChange = "up" | "down" | "same" | "new";

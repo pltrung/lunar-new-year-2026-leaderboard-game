@@ -119,3 +119,18 @@ body {
     opacity: 1.1;
   }
 }
+
+/* Team reveal card glow */
+.team-reveal-glow {
+  animation: team-reveal-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.25);
+}
+
+@keyframes team-reveal-glow {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(212, 175, 55, 0.4);
+  }
+}

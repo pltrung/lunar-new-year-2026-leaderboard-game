@@ -19,6 +19,9 @@ import { HorseGallop } from "@/components/HorseGallop";
 import { ResultsModal } from "@/components/ResultsModal";
 import { playCeremonialDrum } from "@/lib/ceremonialDrum";
 import { fireCeremonialConfetti } from "@/lib/confettiSequence";
+import { useRevealPhase } from "@/hooks/useRevealPhase";
+import { RevealCountdown } from "@/components/RevealCountdown";
+import { TeamReveal } from "@/components/TeamReveal";
 
 // Establish session before content mounts so refresh restores vote state
 const AUTH_READY_TIMEOUT_MS = 3000;
@@ -77,6 +80,7 @@ const SEQUENCE_TOTAL_BEFORE_MODAL_MS =
 
 function HomeContent() {
   const [guestName, setGuestName] = useState("");
+  const { phase, isRevealCountdown, isRevealOrLocked } = useRevealPhase();
   const { days, hours, minutes, seconds, isExpired } = useCountdown();
   const initialRemainingMsRef = useRef<number | null>(null);
 
@@ -91,6 +95,27 @@ function HomeContent() {
   const { dishes, error: dishesError } = useDishes();
   const { items: leaderboardItems, loading: leaderboardLoading } = useLeaderboardWithVoters();
   const { voted, voteRecord, loading: voteLoading } = useUserVoteStatus();
+
+  // Post-results: team reveal or lock (full-screen layer)
+  if (isRevealOrLocked) {
+    return (
+      <main className="min-h-screen">
+        <TeamReveal phase={phase} team={voteRecord?.team ?? null} voted={voted} />
+      </main>
+    );
+  }
+
+  // 15-minute "surprise" countdown after results (no mention of teams)
+  if (isRevealCountdown) {
+    return (
+      <main className="min-h-screen pb-20 pt-6 px-4 sm:px-6 max-w-2xl mx-auto">
+        <TitleSection />
+        <section className="mt-8">
+          <RevealCountdown />
+        </section>
+      </main>
+    );
+  }
 
   const prevExpiredRef = useRef<boolean | undefined>(undefined);
   const sequenceTriggeredRef = useRef(false);

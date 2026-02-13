@@ -22,7 +22,7 @@ export function useUserVoteStatus(): {
       try {
         const { data } = await supabase
           .from("votes")
-          .select("user_id, selected, created_at, guest_name")
+          .select("user_id, selected, created_at, guest_name, team")
           .eq("user_id", uid)
           .maybeSingle();
         if (cancelled) return;
@@ -32,6 +32,7 @@ export function useUserVoteStatus(): {
             selected: data.selected as [string, string],
             createdAt: data.created_at,
             guestName: data.guest_name ?? undefined,
+            team: data.team === "white" || data.team === "black" ? data.team : undefined,
           });
           setVoted(true);
         } else {

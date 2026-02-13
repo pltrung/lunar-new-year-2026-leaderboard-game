@@ -11,10 +11,9 @@ export async function submitVote(
   const name = guestName?.trim() || "";
   if (!name) throw new Error("Please enter your name");
 
-  const { error } = await supabase.from("votes").insert({
-    user_id: user.id,
-    selected: selectedDishIds,
-    guest_name: name || null,
+  const { error } = await supabase.rpc("submit_vote", {
+    p_selected: selectedDishIds,
+    p_guest_name: name || "",
   });
 
   if (error) {

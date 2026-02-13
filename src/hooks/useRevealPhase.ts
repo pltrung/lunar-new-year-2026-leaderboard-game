@@ -5,7 +5,7 @@ import { VOTING_END_DATE, REVEAL_START_DATE } from "@/lib/constants";
 
 export type RevealPhase = "voting" | "reveal_countdown" | "reveal" | "locked";
 
-const REVEAL_DISPLAY_MS = 10 * 1000; // 10 seconds then lock
+const REVEAL_DISPLAY_MS = 15 * 60 * 1000; // 15 minutes of team reveal, then "Listen to host"
 
 function getPhase(now: number): RevealPhase {
   if (now < VOTING_END_DATE.getTime()) return "voting";

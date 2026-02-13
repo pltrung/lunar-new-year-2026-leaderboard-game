@@ -77,6 +77,7 @@ const SEQUENCE_HORSE_DURATION_MS = 1200;
 const SEQUENCE_CONFETTI_DURATION_MS = 2500;
 const SEQUENCE_TOTAL_BEFORE_MODAL_MS =
   SEQUENCE_FREEZE_MS + SEQUENCE_HORSE_DURATION_MS + SEQUENCE_CONFETTI_DURATION_MS;
+const SEQUENCE_MODAL_VIEW_MS = 8000; // Show winners modal this long before switching to next screen
 
 function HomeContent() {
   const [guestName, setGuestName] = useState("");
@@ -119,7 +120,8 @@ function HomeContent() {
   useEffect(() => {
     if (!expiredOnLoadRef.current || !isExpired || leaderboardLoading) return;
     setShowResultsModal(true);
-    setSequenceComplete(true);
+    const t = setTimeout(() => setSequenceComplete(true), SEQUENCE_MODAL_VIEW_MS);
+    return () => clearTimeout(t);
   }, [isExpired, leaderboardLoading]);
 
   // Countdown just hit zero: run cinematic sequence once
@@ -141,15 +143,17 @@ function HomeContent() {
       fireCeremonialConfetti();
     }, SEQUENCE_FREEZE_MS + SEQUENCE_HORSE_DURATION_MS);
 
-    const t3 = setTimeout(() => {
-      setShowResultsModal(true);
-      setSequenceComplete(true);
-    }, SEQUENCE_TOTAL_BEFORE_MODAL_MS);
+    const t3 = setTimeout(() => setShowResultsModal(true), SEQUENCE_TOTAL_BEFORE_MODAL_MS);
+    const t4 = setTimeout(
+      () => setSequenceComplete(true),
+      SEQUENCE_TOTAL_BEFORE_MODAL_MS + SEQUENCE_MODAL_VIEW_MS
+    );
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
+      clearTimeout(t4);
     };
   }, [isExpired]);
 
@@ -173,7 +177,7 @@ function HomeContent() {
       <main className="min-h-screen pb-20 pt-6 px-4 sm:px-6 max-w-2xl mx-auto">
         <TitleSection />
         <section className="mt-8">
-          <RevealCountdown />
+          <RevealCountdown topThree={leaderboardItems.slice(0, 3)} />
         </section>
       </main>
     );

@@ -8,27 +8,32 @@ interface HorseProgressBarProps {
   isLastTenSeconds: boolean;
 }
 
-/** Running horse silhouette facing RIGHT. Metallic gold, shadow beneath. */
+/** Running horse silhouette facing RIGHT. Metallic gold gradient, rim light, no red tint. */
+const HORSE_PATH =
+  "M6 26 L8 22 L10 18 L14 14 L18 12 L22 12 L26 14 L30 16 L34 14 L40 16 L44 20 L46 22 L50 20 L54 22 L56 26 L54 30 L52 32 L50 30 L48 28 L46 30 L44 34 L42 36 L38 34 L36 32 L34 34 L30 36 L26 34 L24 32 L22 34 L18 36 L14 34 L12 30 L10 28 L8 30 L6 26 Z";
+
 function HorseSilhouette({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 80 44" fill="none" className={className} aria-hidden>
       <defs>
-        <linearGradient id="horse-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+        {/* Metallic gold gradient — 135deg: light top-left to dark bottom-right */}
+        <linearGradient id="horse-gold-metallic" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#f8e27a" />
-          <stop offset="50%" stopColor="#d4af37" />
-          <stop offset="100%" stopColor="#b8960c" />
+          <stop offset="30%" stopColor="#f6d365" />
+          <stop offset="60%" stopColor="#d4af37" />
+          <stop offset="100%" stopColor="#b8860b" />
         </linearGradient>
-        {/* Soft shadow directly beneath horse (grounded) */}
-        <filter id="horse-ground-shadow" x="-30%" y="-10%" width="160%" height="140%">
-          <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="#000" floodOpacity="0.35" />
-        </filter>
       </defs>
-      <g filter="url(#horse-ground-shadow)">
-        <path
-          fill="url(#horse-gold)"
-          d="M6 26 L8 22 L10 18 L14 14 L18 12 L22 12 L26 14 L30 16 L34 14 L40 16 L44 20 L46 22 L50 20 L54 22 L56 26 L54 30 L52 32 L50 30 L48 28 L46 30 L44 34 L42 36 L38 34 L36 32 L34 34 L30 36 L26 34 L24 32 L22 34 L18 36 L14 34 L12 30 L10 28 L8 30 L6 26 Z"
-        />
-      </g>
+      {/* Fill: metallic gold only, no filter (glow/shadow applied on wrapper) */}
+      <path fill="url(#horse-gold-metallic)" d={HORSE_PATH} />
+      {/* Top rim light: thin highlight on upper edge, 20–30% opacity */}
+      <path
+        fill="none"
+        stroke="rgba(255, 248, 220, 0.28)"
+        strokeWidth="0.7"
+        strokeLinejoin="round"
+        d={HORSE_PATH}
+      />
     </svg>
   );
 }
@@ -109,7 +114,7 @@ export function HorseProgressBar({ progress, isExpired, isLastTenSeconds }: Hors
 
             {/* Horse: ~1.8x size, bob + tilt + leg illusion, grounded on track */}
             <motion.div
-              className={`relative flex items-end justify-center w-[3.5rem] h-[3.5rem] sm:w-[4.5rem] sm:h-[4.5rem] ${isLastTenSeconds || isExpired ? "horse-glow" : ""} ${isLastTenSeconds ? "horse-motion-blur" : ""}`}
+              className={`relative flex items-end justify-center w-[3.5rem] h-[3.5rem] sm:w-[4.5rem] sm:h-[4.5rem] horse-silhouette-visible ${isLastTenSeconds || isExpired ? "horse-glow" : ""} ${isLastTenSeconds ? "horse-motion-blur" : ""}`}
               animate={
                 isExpired
                   ? {

@@ -70,9 +70,19 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Horse progress bar — horse glow in final 10s */
+/* Horse silhouette: outer glow + under-shadow for separation from red (no red tint) */
+.horse-silhouette-visible {
+  filter:
+    drop-shadow(0 0 6px rgba(255, 215, 0, 0.6))
+    drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
+}
+
+/* Horse progress bar — intensified glow in final 10s */
 .horse-glow {
-  filter: drop-shadow(0 0 8px rgba(248, 226, 122, 0.6)) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+  filter:
+    drop-shadow(0 0 8px rgba(255, 215, 0, 0.7))
+    drop-shadow(0 0 6px rgba(255, 215, 0, 0.6))
+    drop-shadow(0 6px 6px rgba(0, 0, 0, 0.35));
 }
 
 /* Subtle motion blur behind horse in final 10s */

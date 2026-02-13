@@ -134,3 +134,16 @@ body {
     box-shadow: 0 0 50px rgba(212, 175, 55, 0.4);
   }
 }
+
+/* Yin-Yang orb: very slow continuous rotation (pausable at 0) */
+.animate-yin-rotate {
+  animation: yin-rotate var(--yin-duration, 45s) linear infinite;
+}
+.animate-yin-rotate.yin-rotate-paused {
+  animation-play-state: paused;
+}
+@keyframes yin-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}

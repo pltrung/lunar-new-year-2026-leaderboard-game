@@ -6,7 +6,6 @@ import { REVEAL_START_DATE } from "@/lib/constants";
 import type { LeaderboardRow } from "@/hooks/useLeaderboardWithVoters";
 import { PremiumPodium } from "@/components/PremiumPodium";
 import { YinYangOrb } from "@/components/YinYangOrb";
-import { StickmanDuel } from "@/components/StickmanDuel";
 
 function Digit({ value, label }: { value: number; label: string }) {
   return (
@@ -50,14 +49,9 @@ export function RevealCountdown({ topThree }: RevealCountdownProps) {
         The Horse Watches Balance.
       </p>
 
-      {/* 4. Yin-Yang section: fade to black background, orb centerpiece */}
-      <section className="relative mt-8 sm:mt-12 bg-gradient-to-b from-transparent via-neutral-950/40 to-black/90 rounded-2xl mx-4 sm:mx-6 py-6">
+      {/* 4. Yin-Yang section: deep black background, orb centerpiece */}
+      <section className="relative mt-8 sm:mt-12 bg-black rounded-2xl mx-4 sm:mx-6 py-10 sm:py-14">
         <YinYangOrb remainingSeconds={remainingSeconds} freeze={freeze} />
-      </section>
-
-      {/* 5. Stickman duel */}
-      <section className="mt-4 sm:mt-6 px-4">
-        <StickmanDuel freeze={freeze} />
       </section>
 
       {/* Transition at 0: dim overlay when frozen */}
